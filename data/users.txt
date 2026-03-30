@@ -1,2 +1,0 @@
-1|admin|a9741fa463e7c05beb48797235f1db6ba1ededc64257a71683cf651ea012f605|planner@wedding-suite.com|System Administrator|555-0100|ADMIN|2025-01-15
-2|couple1|4234d42cdf1c9b3c3b4b9172232148dacd0c5e5e8116982111c8642999274bed|jamie.alex@example.com|Jamie & Alex Morgan|555-0142|CUSTOMER|2025-02-01

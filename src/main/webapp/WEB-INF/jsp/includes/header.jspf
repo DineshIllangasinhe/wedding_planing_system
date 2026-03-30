@@ -1,47 +1,130 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:set var="reqUri" value="${pageContext.request.requestURI}"/>
+<c:set var="navActive" value="home"/>
+<c:if test="${fn:contains(reqUri, '/admin/users')}"><c:set var="navActive" value="admin"/></c:if>
+<c:if test="${fn:contains(reqUri, '/dashboard')}"><c:set var="navActive" value="dash"/></c:if>
+<c:if test="${fn:contains(reqUri, '/payments')}"><c:set var="navActive" value="pay"/></c:if>
+<c:if test="${fn:contains(reqUri, '/bookings')}"><c:set var="navActive" value="book"/></c:if>
+<c:if test="${fn:contains(reqUri, '/vendors')}"><c:set var="navActive" value="ven"/></c:if>
+<c:if test="${fn:contains(reqUri, '/login') or fn:contains(reqUri, '/register')}"><c:set var="navActive" value="auth"/></c:if>
+<c:if test="${fn:contains(reqUri, '/profile')}"><c:set var="navActive" value="prof"/></c:if>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full scroll-smooth antialiased">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>${empty pageTitle ? 'Wedding Suite' : pageTitle} · Wedding Planning</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <title>${empty pageTitle ? 'Wedding Suite' : pageTitle} · Wedding Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Fraunces:ital,opsz,wght@0,9..144,500..700;1,9..144,500..700&family=Playfair+Display:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+                        display: ['Fraunces', 'Georgia', 'serif'],
+                        hero: ['"Playfair Display"', 'Fraunces', 'Georgia', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff7f7', 100: '#ffecec', 200: '#ffd4d4', 300: '#ffb1b1',
+                            400: '#ff8585', 500: '#f25c5c', 600: '#dc3f3f', 700: '#b92f2f',
+                            800: '#982a2a', 900: '#7e2929',
+                        },
+                        surface: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4' },
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 24px -4px rgba(15, 10, 18, 0.08), 0 8px 32px -8px rgba(15, 10, 18, 0.06)',
+                        'card': '0 1px 0 rgba(15,10,18,0.04), 0 12px 40px -12px rgba(15, 10, 18, 0.12)',
+                        'nav': '0 4px 30px -8px rgba(28, 25, 23, 0.12), 0 0 0 1px rgba(255,255,255,0.6) inset',
+                    },
+                },
+            },
+        };
+    </script>
     <link href="${ctx}/css/app.css" rel="stylesheet"/>
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top shadow-sm">
-    <div class="container">
-        <a class="navbar-brand" href="${ctx}/index.jsp">Wedding Suite</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navMain">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item"><a class="nav-link" href="${ctx}/index.jsp">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="${ctx}/vendors">Vendors</a></li>
+<body class="min-h-full bg-gradient-to-b from-stone-50 via-rose-50/30 to-stone-100 text-stone-900 font-sans">
+<div class="sticky top-0 z-50">
+<%-- Slim top bar --%>
+<div class="hidden border-b border-white/10 bg-gradient-to-r from-rose-950 via-stone-900 to-amber-950 sm:block">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-[11px] font-medium tracking-wide text-amber-100/90 sm:px-6 lg:px-8">
+        <span class="uppercase tracking-[0.2em]">Planning · Vendors · Payments</span>
+        <span class="hidden text-amber-200/70 md:inline">Curated for modern couples</span>
+    </div>
+</div>
+<header class="border-b border-stone-200/60 bg-white/75 shadow-nav backdrop-blur-xl backdrop-saturate-150">
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-rose-300/40 to-transparent"></div>
+    <nav class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Primary">
+        <div class="flex h-[4.25rem] items-center justify-between gap-4">
+            <a href="${ctx}/index.jsp" class="group flex min-w-0 items-center gap-3">
+                <span class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 via-rose-600 to-amber-700 p-[2px] shadow-lg shadow-rose-900/15 ring-1 ring-white/50 transition group-hover:shadow-xl group-hover:shadow-rose-900/20">
+                    <span class="flex h-full w-full items-center justify-center rounded-[0.9rem] bg-gradient-to-b from-white/25 to-white/5 text-lg text-white backdrop-blur-sm">&#9829;</span>
+                </span>
+                <span class="min-w-0">
+                    <span class="block font-hero text-lg font-semibold leading-tight tracking-tight text-stone-900 transition group-hover:text-rose-900 sm:text-xl">Wedding Suite</span>
+                    <span class="hidden text-[10px] font-semibold uppercase tracking-[0.28em] text-stone-400 sm:block">Plan &amp; book</span>
+                </span>
+            </a>
+            <button type="button" id="navToggle" class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-stone-200/90 bg-white/90 text-stone-700 shadow-sm transition hover:border-rose-200 hover:bg-rose-50/80 hover:text-rose-900 lg:hidden" aria-controls="mobileNav" aria-expanded="false" aria-label="Toggle menu">
+                <svg id="navIconMenu" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <svg id="navIconClose" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <div class="hidden lg:flex lg:flex-1 lg:items-center lg:justify-center lg:gap-0.5">
+                <a href="${ctx}/index.jsp" class="rounded-full px-4 py-2 text-sm font-semibold transition ${navActive == 'home' ? 'bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-sm ring-1 ring-rose-200/70' : 'text-stone-600 hover:bg-stone-100/90 hover:text-stone-900'}">Home</a>
+                <a href="${ctx}/vendors" class="rounded-full px-4 py-2 text-sm font-semibold transition ${navActive == 'ven' ? 'bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-sm ring-1 ring-rose-200/70' : 'text-stone-600 hover:bg-stone-100/90 hover:text-stone-900'}">Vendors</a>
                 <c:if test="${not empty sessionScope.currentUser}">
-                    <li class="nav-item"><a class="nav-link" href="${ctx}/bookings">Bookings</a></li>
-                    <li class="nav-item"><a class="nav-link" href="${ctx}/payments">Payments</a></li>
-                    <li class="nav-item"><a class="nav-link" href="${ctx}/dashboard">Dashboard</a></li>
+                    <a href="${ctx}/bookings" class="rounded-full px-4 py-2 text-sm font-semibold transition ${navActive == 'book' ? 'bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-sm ring-1 ring-rose-200/70' : 'text-stone-600 hover:bg-stone-100/90 hover:text-stone-900'}">Bookings</a>
+                    <a href="${ctx}/payments" class="rounded-full px-4 py-2 text-sm font-semibold transition ${navActive == 'pay' ? 'bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-sm ring-1 ring-rose-200/70' : 'text-stone-600 hover:bg-stone-100/90 hover:text-stone-900'}">Payments</a>
+                    <a href="${ctx}/dashboard" class="rounded-full px-4 py-2 text-sm font-semibold transition ${navActive == 'dash' ? 'bg-gradient-to-b from-rose-50 to-white text-rose-900 shadow-sm ring-1 ring-rose-200/70' : 'text-stone-600 hover:bg-stone-100/90 hover:text-stone-900'}">Dashboard</a>
                 </c:if>
                 <c:if test="${sessionScope.currentUser.admin}">
-                    <li class="nav-item"><a class="nav-link" href="${ctx}/admin/users">Users</a></li>
+                    <a href="${ctx}/admin/users" class="rounded-full px-4 py-2 text-sm font-semibold transition ${navActive == 'admin' ? 'bg-rose-900 text-white shadow-md shadow-rose-900/25' : 'text-rose-800 hover:bg-rose-50'}">Users</a>
                 </c:if>
-            </ul>
-            <ul class="navbar-nav ms-auto">
+            </div>
+            <div class="hidden items-center gap-2 lg:flex">
                 <c:choose>
                     <c:when test="${empty sessionScope.currentUser}">
-                        <li class="nav-item"><a class="nav-link" href="${ctx}/login">Login</a></li>
-                        <li class="nav-item"><a class="btn btn-primary btn-sm ms-lg-2 mt-2 mt-lg-0" href="${ctx}/register">Register</a></li>
+                        <a href="${ctx}/login" class="rounded-full px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 ${navActive == 'auth' ? 'bg-stone-100 text-stone-900' : ''}">Sign in</a>
+                        <a href="${ctx}/register" class="rounded-full bg-gradient-to-r from-rose-600 to-rose-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-600/25 ring-1 ring-white/20 transition hover:from-rose-700 hover:to-rose-800 hover:shadow-rose-700/30">Get started</a>
                     </c:when>
                     <c:otherwise>
-                        <li class="nav-item"><a class="nav-link" href="${ctx}/profile">${sessionScope.currentUser.fullName}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="${ctx}/logout">Logout</a></li>
+                        <a href="${ctx}/profile" class="max-w-[11rem] truncate rounded-full border border-transparent px-3 py-2 text-sm font-semibold text-stone-800 transition hover:border-stone-200 hover:bg-white ${navActive == 'prof' ? 'border-stone-200 bg-white shadow-sm' : ''}" title="${sessionScope.currentUser.fullName}">${sessionScope.currentUser.fullName}</a>
+                        <a href="${ctx}/logout" class="rounded-full border border-stone-200/90 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-300 hover:bg-stone-50">Logout</a>
                     </c:otherwise>
                 </c:choose>
-            </ul>
+            </div>
         </div>
-    </div>
-</nav>
-<main class="container py-4">
+        <div id="mobileNav" class="hidden border-t border-stone-200/70 pb-5 pt-2 lg:hidden">
+            <div class="flex flex-col gap-1 rounded-2xl bg-stone-50/80 p-2 ring-1 ring-stone-200/60">
+                <a href="${ctx}/index.jsp" class="rounded-xl px-4 py-2.5 text-sm font-semibold ${navActive == 'home' ? 'bg-white text-rose-900 shadow-sm ring-1 ring-rose-200/60' : 'text-stone-700 hover:bg-white/80'}">Home</a>
+                <a href="${ctx}/vendors" class="rounded-xl px-4 py-2.5 text-sm font-semibold ${navActive == 'ven' ? 'bg-white text-rose-900 shadow-sm ring-1 ring-rose-200/60' : 'text-stone-700 hover:bg-white/80'}">Vendors</a>
+                <c:if test="${not empty sessionScope.currentUser}">
+                    <a href="${ctx}/bookings" class="rounded-xl px-4 py-2.5 text-sm font-semibold ${navActive == 'book' ? 'bg-white text-rose-900 shadow-sm ring-1 ring-rose-200/60' : 'text-stone-700 hover:bg-white/80'}">Bookings</a>
+                    <a href="${ctx}/payments" class="rounded-xl px-4 py-2.5 text-sm font-semibold ${navActive == 'pay' ? 'bg-white text-rose-900 shadow-sm ring-1 ring-rose-200/60' : 'text-stone-700 hover:bg-white/80'}">Payments</a>
+                    <a href="${ctx}/dashboard" class="rounded-xl px-4 py-2.5 text-sm font-semibold ${navActive == 'dash' ? 'bg-white text-rose-900 shadow-sm ring-1 ring-rose-200/60' : 'text-stone-700 hover:bg-white/80'}">Dashboard</a>
+                </c:if>
+                <c:if test="${sessionScope.currentUser.admin}">
+                    <a href="${ctx}/admin/users" class="rounded-xl px-4 py-2.5 text-sm font-semibold ${navActive == 'admin' ? 'bg-rose-900 text-white' : 'text-rose-800 hover:bg-rose-50'}">Users</a>
+                </c:if>
+                <div class="my-1 h-px bg-stone-200/80"></div>
+                <c:choose>
+                    <c:when test="${empty sessionScope.currentUser}">
+                        <a href="${ctx}/login" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-stone-800 hover:bg-white/80">Sign in</a>
+                        <a href="${ctx}/register" class="mt-1 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-4 py-3 text-center text-sm font-semibold text-white shadow-md">Get started</a>
+                    </c:when>
+                    <c:otherwise>
+                        <a href="${ctx}/profile" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-white/80">Profile</a>
+                        <a href="${ctx}/logout" class="mt-1 rounded-xl border border-stone-200 bg-white px-4 py-3 text-center text-sm font-semibold text-stone-800">Logout</a>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </div>
+    </nav>
+</header>
+</div>
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">

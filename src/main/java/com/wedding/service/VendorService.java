@@ -5,10 +5,15 @@ import com.wedding.model.DecoratorVendor;
 import com.wedding.model.Photographer;
 import com.wedding.model.Vendor;
 import com.wedding.model.VendorType;
-import com.wedding.util.FileUtil;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -16,38 +21,47 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Vendor CRUD with polymorphic persistence in vendors.txt.
+ * Vendor CRUD with polymorphic rows in MySQL.
  */
 public class VendorService {
 
-    private static final String FILE = "vendors.txt";
+    private final DataSource dataSource;
 
-    private final String dataDir;
-
-    public VendorService(String dataDir) {
-        this.dataDir = dataDir;
+    public VendorService(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public List<Vendor> listAll() throws IOException {
-        List<Vendor> out = new ArrayList<>();
-        for (String line : FileUtil.readAllLines(dataDir, FILE)) {
-            out.add(fromLine(line));
+        String sql = "SELECT id, vendor_type, business_name, contact_email, contact_phone, description, daily_rate, extra1, extra2 FROM vendors ORDER BY id";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            List<Vendor> out = new ArrayList<>();
+            while (rs.next()) {
+                out.add(mapRow(rs));
+            }
+            return out;
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        return out;
     }
 
     public Optional<Vendor> findById(long id) throws IOException {
-        for (Vendor v : listAll()) {
-            if (v.getId() == id) {
-                return Optional.of(v);
+        String sql = "SELECT id, vendor_type, business_name, contact_email, contact_phone, description, daily_rate, extra1, extra2 FROM vendors WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        return Optional.empty();
     }
 
-    /**
-     * Search by name/description and optional category filter.
-     */
     public List<Vendor> search(String query, VendorType typeFilter) throws IOException {
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         return listAll().stream()
@@ -64,12 +78,20 @@ public class VendorService {
         if (err.isPresent()) {
             return err;
         }
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        long id = FileUtil.nextId(lines, 0);
-        vendor.setId(id);
-        lines.add(toLine(vendor));
-        FileUtil.writeAllLines(dataDir, FILE, lines);
-        return Optional.empty();
+        String sql = "INSERT INTO vendors (vendor_type, business_name, contact_email, contact_phone, description, daily_rate, extra1, extra2) VALUES (?,?,?,?,?,?,?,?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            bindVendor(ps, vendor, false);
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    vendor.setId(keys.getLong(1));
+                }
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
     }
 
     public Optional<String> update(Vendor vendor) throws IOException {
@@ -77,42 +99,60 @@ public class VendorService {
         if (err.isPresent()) {
             return err;
         }
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        List<String> next = new ArrayList<>();
-        boolean found = false;
-        for (String line : lines) {
-            Vendor existing = fromLine(line);
-            if (existing.getId() == vendor.getId()) {
-                found = true;
-                next.add(toLine(vendor));
-            } else {
-                next.add(line);
+        String sql = "UPDATE vendors SET vendor_type=?, business_name=?, contact_email=?, contact_phone=?, description=?, daily_rate=?, extra1=?, extra2=? WHERE id=?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            bindVendor(ps, vendor, true);
+            if (ps.executeUpdate() == 0) {
+                return Optional.of("Vendor not found.");
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        if (!found) {
-            return Optional.of("Vendor not found.");
-        }
-        FileUtil.writeAllLines(dataDir, FILE, next);
-        return Optional.empty();
     }
 
     public Optional<String> delete(long id) throws IOException {
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        List<String> next = new ArrayList<>();
-        boolean removed = false;
-        for (String line : lines) {
-            Vendor v = fromLine(line);
-            if (v.getId() == id) {
-                removed = true;
-            } else {
-                next.add(line);
+        String sql = "DELETE FROM vendors WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            if (ps.executeUpdate() == 0) {
+                return Optional.of("Vendor not found.");
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
+    }
+
+    private void bindVendor(PreparedStatement ps, Vendor v, boolean includeId) throws SQLException {
+        ps.setString(1, v.getType().name());
+        ps.setString(2, v.getBusinessName());
+        ps.setString(3, v.getContactEmail());
+        ps.setString(4, v.getContactPhone());
+        ps.setString(5, v.getDescription());
+        ps.setBigDecimal(6, v.getDailyRate());
+        switch (v.getType()) {
+            case PHOTOGRAPHER -> {
+                Photographer p = (Photographer) v;
+                ps.setString(7, p.getShootingStyle());
+                ps.setString(8, String.valueOf(p.getIncludedHours()));
+            }
+            case CATERING -> {
+                Caterer c = (Caterer) v;
+                ps.setString(7, c.getCuisineType());
+                ps.setString(8, String.valueOf(c.isIncludesStaffing()));
+            }
+            case DECORATION -> {
+                DecoratorVendor d = (DecoratorVendor) v;
+                ps.setString(7, d.getThemeFocus());
+                ps.setString(8, String.valueOf(d.isProvidesFlorals()));
             }
         }
-        if (!removed) {
-            return Optional.of("Vendor not found.");
+        if (includeId) {
+            ps.setLong(9, v.getId());
         }
-        FileUtil.writeAllLines(dataDir, FILE, next);
-        return Optional.empty();
     }
 
     private Optional<String> validate(Vendor v) {
@@ -134,70 +174,20 @@ public class VendorService {
         return Optional.empty();
     }
 
-    /**
-     * Record layout:
-     * id|TYPE|businessName|email|phone|description|dailyRate|typeSpecific...
-     */
-    private Vendor fromLine(String line) {
-        String[] c = FileUtil.splitRecord(line);
-        long id = Long.parseLong(c[0]);
-        VendorType type = VendorType.valueOf(c[1]);
-        String name = c[2];
-        String email = c[3];
-        String phone = c[4];
-        String desc = c[5];
-        BigDecimal rate = new BigDecimal(c[6]);
+    private Vendor mapRow(ResultSet rs) throws SQLException {
+        long id = rs.getLong("id");
+        VendorType type = VendorType.valueOf(rs.getString("vendor_type"));
+        String name = rs.getString("business_name");
+        String email = rs.getString("contact_email");
+        String phone = rs.getString("contact_phone");
+        String desc = rs.getString("description");
+        BigDecimal rate = rs.getBigDecimal("daily_rate");
+        String e1 = rs.getString("extra1");
+        String e2 = rs.getString("extra2");
         return switch (type) {
-            case PHOTOGRAPHER -> new Photographer(id, name, email, phone, desc, rate, c[7], Integer.parseInt(c[8]));
-            case CATERING -> new Caterer(id, name, email, phone, desc, rate, c[7], Boolean.parseBoolean(c[8]));
-            case DECORATION -> new DecoratorVendor(id, name, email, phone, desc, rate, c[7], Boolean.parseBoolean(c[8]));
-        };
-    }
-
-    private String toLine(Vendor v) {
-        return switch (v.getType()) {
-            case PHOTOGRAPHER -> {
-                Photographer p = (Photographer) v;
-                yield FileUtil.joinRecord(
-                        String.valueOf(p.getId()),
-                        p.getType().name(),
-                        p.getBusinessName(),
-                        p.getContactEmail(),
-                        p.getContactPhone(),
-                        p.getDescription(),
-                        p.getDailyRate().toPlainString(),
-                        p.getShootingStyle(),
-                        String.valueOf(p.getIncludedHours())
-                );
-            }
-            case CATERING -> {
-                Caterer c = (Caterer) v;
-                yield FileUtil.joinRecord(
-                        String.valueOf(c.getId()),
-                        c.getType().name(),
-                        c.getBusinessName(),
-                        c.getContactEmail(),
-                        c.getContactPhone(),
-                        c.getDescription(),
-                        c.getDailyRate().toPlainString(),
-                        c.getCuisineType(),
-                        String.valueOf(c.isIncludesStaffing())
-                );
-            }
-            case DECORATION -> {
-                DecoratorVendor d = (DecoratorVendor) v;
-                yield FileUtil.joinRecord(
-                        String.valueOf(d.getId()),
-                        d.getType().name(),
-                        d.getBusinessName(),
-                        d.getContactEmail(),
-                        d.getContactPhone(),
-                        d.getDescription(),
-                        d.getDailyRate().toPlainString(),
-                        d.getThemeFocus(),
-                        String.valueOf(d.isProvidesFlorals())
-                );
-            }
+            case PHOTOGRAPHER -> new Photographer(id, name, email, phone, desc, rate, e1, Integer.parseInt(e2));
+            case CATERING -> new Caterer(id, name, email, phone, desc, rate, e1, Boolean.parseBoolean(e2));
+            case DECORATION -> new DecoratorVendor(id, name, email, phone, desc, rate, e1, Boolean.parseBoolean(e2));
         };
     }
 }

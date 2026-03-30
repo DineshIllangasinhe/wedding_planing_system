@@ -31,7 +31,7 @@ public class VendorServlet extends BaseServlet {
             }
         }
         try {
-            VendorService vendors = new VendorService(dataDir(getServletContext()));
+            VendorService vendors = new VendorService(dataSource(getServletContext()));
             var list = vendors.search(search, filter);
             req.setAttribute("vendors", list);
             req.setAttribute("search", search == null ? "" : search);
@@ -58,7 +58,7 @@ public class VendorServlet extends BaseServlet {
         }
         String action = req.getParameter("action");
         try {
-            VendorService vendors = new VendorService(dataDir(getServletContext()));
+            VendorService vendors = new VendorService(dataSource(getServletContext()));
             if ("delete".equals(action)) {
                 long id = Long.parseLong(req.getParameter("id"));
                 var err = vendors.delete(id);

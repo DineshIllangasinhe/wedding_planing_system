@@ -26,8 +26,8 @@ public class PaymentServlet extends BaseServlet {
         }
         User u = currentUser(req);
         try {
-            PaymentService payments = new PaymentService(dataDir(getServletContext()));
-            BookingService bookings = new BookingService(dataDir(getServletContext()));
+            PaymentService payments = new PaymentService(dataSource(getServletContext()));
+            BookingService bookings = new BookingService(dataSource(getServletContext()));
             List<Payment> list = u.isAdmin() ? payments.listAll() : payments.listByUser(u.getId());
             List<Booking> bookingChoices = u.isAdmin()
                     ? bookings.listAll()
@@ -61,8 +61,8 @@ public class PaymentServlet extends BaseServlet {
         User u = currentUser(req);
         String action = req.getParameter("action");
         try {
-            PaymentService payments = new PaymentService(dataDir(getServletContext()));
-            BookingService bookings = new BookingService(dataDir(getServletContext()));
+            PaymentService payments = new PaymentService(dataSource(getServletContext()));
+            BookingService bookings = new BookingService(dataSource(getServletContext()));
             if ("delete".equals(action)) {
                 if (!u.isAdmin()) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN);

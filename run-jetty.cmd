@@ -23,6 +23,6 @@ if not defined JAVA_HOME (
 :run
 cd /d "%~dp0"
 echo Using JAVA_HOME=%JAVA_HOME%
-echo App URL: http://localhost:8080/
+echo App URL: http://localhost:8081/
 echo Press Ctrl+C to stop the server.
 call mvnw.cmd jetty:run

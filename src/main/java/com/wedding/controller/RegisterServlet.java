@@ -24,7 +24,7 @@ public class RegisterServlet extends BaseServlet {
         String fullName = req.getParameter("fullName");
         String phone = req.getParameter("phone");
         try {
-            UserService users = new UserService(dataDir(getServletContext()));
+            UserService users = new UserService(dataSource(getServletContext()));
             var err = users.register(username, password, email, fullName, phone);
             if (err.isPresent()) {
                 req.setAttribute("formError", err.get());

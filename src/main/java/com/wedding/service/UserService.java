@@ -2,44 +2,64 @@ package com.wedding.service;
 
 import com.wedding.model.User;
 import com.wedding.model.UserRole;
-import com.wedding.util.FileUtil;
 import com.wedding.util.PasswordUtil;
 
+import javax.sql.DataSource;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * User management CRUD backed by users.txt.
+ * User management CRUD backed by MySQL.
  */
 public class UserService {
 
-    private static final String FILE = "users.txt";
+    private final DataSource dataSource;
 
-    private final String dataDir;
-
-    public UserService(String dataDir) {
-        this.dataDir = dataDir;
+    public UserService(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public List<User> listAll() throws IOException {
-        List<User> out = new ArrayList<>();
-        for (String line : FileUtil.readAllLines(dataDir, FILE)) {
-            out.add(fromLine(line));
+        String sql = "SELECT id, username, password_hash, email, full_name, phone, `role`, created_at FROM users ORDER BY id";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            List<User> out = new ArrayList<>();
+            while (rs.next()) {
+                out.add(mapRow(rs));
+            }
+            return out;
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        return out;
     }
 
     public Optional<User> findById(long id) throws IOException {
-        for (User u : listAll()) {
-            if (u.getId() == id) {
-                return Optional.of(u);
+        String sql = "SELECT id, username, password_hash, email, full_name, phone, `role`, created_at FROM users WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        return Optional.empty();
     }
 
     public Optional<User> findByUsername(String username) throws IOException {
@@ -47,12 +67,19 @@ public class UserService {
             return Optional.empty();
         }
         String key = username.trim().toLowerCase(Locale.ROOT);
-        for (User u : listAll()) {
-            if (u.getUsername().toLowerCase(Locale.ROOT).equals(key)) {
-                return Optional.of(u);
+        String sql = "SELECT id, username, password_hash, email, full_name, phone, `role`, created_at FROM users WHERE LOWER(username) = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, key);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        return Optional.empty();
     }
 
     public Optional<String> register(String username, String plainPassword, String email,
@@ -64,15 +91,33 @@ public class UserService {
         if (findByUsername(username).isPresent()) {
             return Optional.of("That username is already taken.");
         }
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        long id = FileUtil.nextId(lines, 0);
+        UserRole role;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement countPs = conn.prepareStatement("SELECT COUNT(*) FROM users");
+             ResultSet crs = countPs.executeQuery()) {
+            crs.next();
+            role = crs.getLong(1) == 0 ? UserRole.ADMIN : UserRole.CUSTOMER;
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
         String hash = PasswordUtil.hash(username.trim(), plainPassword);
-        UserRole role = lines.isEmpty() ? UserRole.ADMIN : UserRole.CUSTOMER;
-        User u = new User(id, username.trim(), hash, email.trim(), fullName.trim(), phone.trim(),
-                role, LocalDate.now());
-        lines.add(toLine(u));
-        FileUtil.writeAllLines(dataDir, FILE, lines);
-        return Optional.empty();
+        String sql = "INSERT INTO users (username, password_hash, email, full_name, phone, `role`, created_at) VALUES (?,?,?,?,?,?,?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, username.trim());
+            ps.setString(2, hash);
+            ps.setString(3, email.trim());
+            ps.setString(4, fullName.trim());
+            ps.setString(5, phone.trim());
+            ps.setString(6, role.name());
+            ps.setDate(7, Date.valueOf(LocalDate.now()));
+            ps.executeUpdate();
+            return Optional.empty();
+        } catch (SQLIntegrityConstraintViolationException e) {
+            return Optional.of("That username is already taken.");
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
     }
 
     public Optional<String> update(long id, String email, String fullName, String phone,
@@ -81,48 +126,47 @@ public class UserService {
         if (v.isPresent()) {
             return v;
         }
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        List<String> next = new ArrayList<>();
-        boolean found = false;
-        for (String line : lines) {
-            User u = fromLine(line);
-            if (u.getId() == id) {
-                found = true;
-                u.setEmail(email.trim());
-                u.setFullName(fullName.trim());
-                u.setPhone(phone.trim());
-                if (newPasswordOrBlank != null && !newPasswordOrBlank.isBlank()) {
-                    u.setPasswordHash(PasswordUtil.hash(u.getUsername(), newPasswordOrBlank));
-                }
-                next.add(toLine(u));
-            } else {
-                next.add(line);
-            }
-        }
-        if (!found) {
+        Optional<User> existing = findById(id);
+        if (existing.isEmpty()) {
             return Optional.of("User not found.");
         }
-        FileUtil.writeAllLines(dataDir, FILE, next);
-        return Optional.empty();
+        User u = existing.get();
+        boolean changePw = newPasswordOrBlank != null && !newPasswordOrBlank.isBlank();
+        String sql = changePw
+                ? "UPDATE users SET email=?, full_name=?, phone=?, password_hash=? WHERE id=?"
+                : "UPDATE users SET email=?, full_name=?, phone=? WHERE id=?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email.trim());
+            ps.setString(2, fullName.trim());
+            ps.setString(3, phone.trim());
+            if (changePw) {
+                ps.setString(4, PasswordUtil.hash(u.getUsername(), newPasswordOrBlank));
+                ps.setLong(5, id);
+            } else {
+                ps.setLong(4, id);
+            }
+            if (ps.executeUpdate() == 0) {
+                return Optional.of("User not found.");
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
     }
 
     public Optional<String> delete(long id) throws IOException {
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        List<String> next = new ArrayList<>();
-        boolean removed = false;
-        for (String line : lines) {
-            User u = fromLine(line);
-            if (u.getId() == id) {
-                removed = true;
-            } else {
-                next.add(line);
+        String sql = "DELETE FROM users WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            if (ps.executeUpdate() == 0) {
+                return Optional.of("User not found.");
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        if (!removed) {
-            return Optional.of("User not found.");
-        }
-        FileUtil.writeAllLines(dataDir, FILE, next);
-        return Optional.empty();
     }
 
     public Optional<User> authenticate(String username, String plainPassword) throws IOException {
@@ -134,6 +178,33 @@ public class UserService {
             return Optional.empty();
         }
         return u;
+    }
+
+    private static User mapRow(ResultSet rs) throws SQLException {
+        String roleStr = rs.getString("role");
+        if (roleStr == null || roleStr.isBlank()) {
+            throw new SQLException("users.role is null or blank for id=" + rs.getLong("id"));
+        }
+        UserRole role;
+        try {
+            role = UserRole.valueOf(roleStr.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new SQLException("Invalid users.role value: " + roleStr, ex);
+        }
+        java.sql.Date created = rs.getDate("created_at");
+        if (created == null) {
+            throw new SQLException("users.created_at is null for id=" + rs.getLong("id"));
+        }
+        return new User(
+                rs.getLong("id"),
+                Objects.requireNonNullElse(rs.getString("username"), ""),
+                Objects.requireNonNullElse(rs.getString("password_hash"), ""),
+                Objects.requireNonNullElse(rs.getString("email"), ""),
+                Objects.requireNonNullElse(rs.getString("full_name"), ""),
+                Objects.requireNonNullElse(rs.getString("phone"), ""),
+                role,
+                created.toLocalDate()
+        );
     }
 
     private Optional<String> validateUserFields(String username, String email, String fullName,
@@ -159,32 +230,5 @@ public class UserService {
             return Optional.of("Phone number is required.");
         }
         return Optional.empty();
-    }
-
-    private static User fromLine(String line) {
-        String[] c = FileUtil.splitRecord(line);
-        return new User(
-                Long.parseLong(c[0]),
-                c[1],
-                c[2],
-                c[3],
-                c[4],
-                c[5],
-                UserRole.valueOf(c[6]),
-                LocalDate.parse(c[7])
-        );
-    }
-
-    private static String toLine(User u) {
-        return FileUtil.joinRecord(
-                String.valueOf(u.getId()),
-                u.getUsername(),
-                u.getPasswordHash(),
-                u.getEmail(),
-                u.getFullName(),
-                u.getPhone(),
-                u.getRole().name(),
-                u.getCreatedAt().toString()
-        );
     }
 }

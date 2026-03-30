@@ -22,7 +22,7 @@ public class UserAdminServlet extends BaseServlet {
             return;
         }
         try {
-            UserService users = new UserService(dataDir(getServletContext()));
+            UserService users = new UserService(dataSource(getServletContext()));
             List<User> all = users.listAll();
             req.setAttribute("allUsers", all);
             req.getRequestDispatcher("/WEB-INF/jsp/admin-users.jsp").forward(req, resp);
@@ -39,7 +39,7 @@ public class UserAdminServlet extends BaseServlet {
         String action = req.getParameter("action");
         User admin = currentUser(req);
         try {
-            UserService users = new UserService(dataDir(getServletContext()));
+            UserService users = new UserService(dataSource(getServletContext()));
             if ("delete".equals(action)) {
                 long id = Long.parseLong(req.getParameter("userId"));
                 if (id == admin.getId()) {

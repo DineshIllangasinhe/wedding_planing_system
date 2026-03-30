@@ -31,9 +31,9 @@ public class DashboardServlet extends BaseServlet {
         }
         User u = currentUser(req);
         try {
-            BookingService bookings = new BookingService(dataDir(getServletContext()));
-            PaymentService payments = new PaymentService(dataDir(getServletContext()));
-            VendorService vendors = new VendorService(dataDir(getServletContext()));
+            BookingService bookings = new BookingService(dataSource(getServletContext()));
+            PaymentService payments = new PaymentService(dataSource(getServletContext()));
+            VendorService vendors = new VendorService(dataSource(getServletContext()));
             List<Booking> history = bookings.bookingHistoryForUser(u.getId(), true);
             List<Payment> payList = u.isAdmin()
                     ? payments.listAll()

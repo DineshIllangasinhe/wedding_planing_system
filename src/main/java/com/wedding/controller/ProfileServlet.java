@@ -30,7 +30,7 @@ public class ProfileServlet extends BaseServlet {
         String action = req.getParameter("action");
         User u = currentUser(req);
         try {
-            UserService users = new UserService(dataDir(getServletContext()));
+            UserService users = new UserService(dataSource(getServletContext()));
             if ("delete".equals(action)) {
                 var err = users.delete(u.getId());
                 if (err.isPresent()) {

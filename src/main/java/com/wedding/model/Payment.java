@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * Payment record tied to a booking; persisted to payments.txt.
+ * Payment record tied to a booking; persisted in the {@code payments} table.
  */
 public class Payment {
 

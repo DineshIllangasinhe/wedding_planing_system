@@ -3,40 +3,46 @@
 <c:set var="pageTitle" value="Register" scope="request"/>
 <%@ include file="WEB-INF/jsp/includes/header.jspf" %>
 
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <h1 class="h3 mb-4">Create your account</h1>
-        <c:if test="${not empty formError}">
-            <div class="alert alert-danger"><c:out value="${formError}"/></div>
-        </c:if>
-        <form method="post" action="${ctx}/register" class="card p-4 shadow-sm border-0">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" for="username">Username</label>
-                    <input class="form-control" id="username" name="username" required minlength="3"
-                           value="${username}" autocomplete="username"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="password">Password</label>
-                    <input class="form-control" type="password" id="password" name="password" required minlength="6" autocomplete="new-password"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="email">Email</label>
-                    <input class="form-control" type="email" id="email" name="email" required value="${email}"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="fullName">Full name</label>
-                    <input class="form-control" id="fullName" name="fullName" required value="${fullName}"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="phone">Phone</label>
-                    <input class="form-control" id="phone" name="phone" required value="${phone}"/>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary w-100 mt-4">Register</button>
-        </form>
-        <p class="text-center mt-3"><a href="${ctx}/login">Already have an account?</a></p>
+<div class="mx-auto max-w-lg">
+    <div class="mb-8 text-center">
+        <h1 class="font-display text-2xl font-semibold text-stone-900 sm:text-3xl">Create your account</h1>
+        <p class="mt-2 text-sm text-stone-500">Join to browse vendors, book dates, and track payments.</p>
     </div>
+
+    <c:if test="${not empty formError}">
+        <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"><c:out value="${formError}"/></div>
+    </c:if>
+
+    <div class="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-card sm:p-8">
+        <form method="post" action="${ctx}/register" class="space-y-5">
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-stone-700" for="username">Username</label>
+                <input class="block w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/25" id="username" name="username" required minlength="3" value="${username}" autocomplete="username"/>
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-stone-700" for="password">Password</label>
+                <input class="block w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/25" type="password" id="password" name="password" required minlength="6" autocomplete="new-password"/>
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-stone-700" for="email">Email</label>
+                <input class="block w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/25" type="email" id="email" name="email" required value="${email}"/>
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-stone-700" for="fullName">Full name</label>
+                <input class="block w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/25" id="fullName" name="fullName" required value="${fullName}"/>
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-stone-700" for="phone">Phone</label>
+                <input class="block w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/25" id="phone" name="phone" required value="${phone}"/>
+            </div>
+            <button type="submit" class="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-rose-600/25 transition hover:from-rose-700 hover:to-rose-800">
+                Create account
+            </button>
+        </form>
+    </div>
+    <p class="mt-6 text-center text-sm text-stone-600">
+        Already registered? <a href="${ctx}/login" class="font-semibold text-rose-700 hover:underline">Sign in</a>
+    </p>
 </div>
 
 <%@ include file="WEB-INF/jsp/includes/footer.jspf" %>

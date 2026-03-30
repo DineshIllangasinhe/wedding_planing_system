@@ -6,13 +6,7 @@
 
     <display-name>Wedding Planning and Vendor Booking System</display-name>
 
-    <!-- Optional: absolute path for text data (otherwise WEB-INF/data under the deployed app is used). -->
-    <!--
-    <context-param>
-        <param-name>dataDirectory</param-name>
-        <param-value>C:/data/wedding-app</param-value>
-    </context-param>
-    -->
+    <!-- Persistence: MySQL via HikariCP; connection settings in classpath database.properties (see README). -->
 
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>

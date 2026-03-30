@@ -1,4 +1,6 @@
 /target/
+# Local DB credentials (never commit)
+src/main/resources/database.properties
 .idea/
 *.iml
 .classpath

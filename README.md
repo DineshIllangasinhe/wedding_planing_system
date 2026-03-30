@@ -1,6 +1,21 @@
 # Wedding Planning and Vendor Booking System
 
-Production-style **Java web application** (JSP + Servlets, **Java 17**) for planning weddings and booking vendors (photography, catering, decoration). It uses a **layered architecture** and **text file persistence** with `BufferedReader` / writers via a shared utility.
+Production-style **Java web application** (JSP + Servlets, **Java 17**) for planning weddings and booking vendors (photography, catering, decoration). It uses a **layered architecture** and **MySQL** persistence via **JDBC** and **HikariCP** connection pooling.
+
+## MySQL setup
+
+1. Create an empty schema in MySQL Workbench (or CLI), e.g. **`wedding`**.
+2. Run the script **`src/main/resources/sql/schema.sql`** against that database (creates tables, foreign keys, and demo seed rows). Use a **fresh** database the first time; re-running inserts will duplicate keys if data already exists.
+3. Copy **`src/main/resources/database.properties.example`** to **`src/main/resources/database.properties`** and set `jdbc.url`, `jdbc.username`, and `jdbc.password`. The file **`database.properties` is gitignored** so credentials are not committed.
+4. Start the app; **`DatabaseListener`** opens the pool at startup. If `database.properties` is missing, the webapp fails fast with a clear error.
+
+Example URL (adjust host, port, database name as needed):
+
+```properties
+jdbc.url=jdbc:mysql://localhost:3306/wedding?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+jdbc.username=root
+jdbc.password=your_password
+```
 
 ## Architecture
 
@@ -9,34 +24,18 @@ Production-style **Java web application** (JSP + Servlets, **Java 17**) for plan
 | **Model** | `com.wedding.model` | Entities, enums (`User`, `Vendor` hierarchy, `Booking`, `Payment`, …) |
 | **Service** | `com.wedding.service` | CRUD and rules (double-booking checks, validation messages) |
 | **Controller** | `com.wedding.controller` | HTTP handling (`BaseServlet`, feature servlets) |
-| **Utility** | `com.wedding.util` | `FileUtil` (read/write/append, escaped `\|` records), `PasswordUtil` |
-| **Config** | `com.wedding.config` | Data directory bootstrap (`DataDirectoryInitializer`) |
-| **View** | `src/main/webapp` | JSP, Bootstrap 5, `css/app.css` |
+| **Utility** | `com.wedding.util` | `PasswordUtil` (pepper + SHA-256 hashing) |
+| **Config** | `com.wedding.config` | `DatabaseListener` (HikariCP), `AppPaths` (DataSource lookup) |
+| **View** | `src/main/webapp` | JSP, **Tailwind CSS** (CDN), shared `header.jspf` / `footer.jspf`, `css/app.css` |
 
 **OOP:** encapsulation on all entities, **inheritance** `Vendor` → `Photographer`, `Caterer`, `DecoratorVendor`, **polymorphism** via `getSpecialtySummary()` / `getServiceDetails()` overrides.
 
-## Data files
-
-At runtime, data is stored under **`WEB-INF/data`** inside the deployed application (created on first startup). If those files are missing or empty, they are **seeded** from the classpath copies in `src/main/resources/data-seed/`.
-
-The repository also includes a mirror under **`data/`** at the project root (`users.txt`, `vendors.txt`, `bookings.txt`, `payments.txt`) for easy inspection and version control.
-
-Optional absolute path (e.g. shared or writable location):
-
-```xml
-<!-- WEB-INF/web.xml -->
-<context-param>
-    <param-name>dataDirectory</param-name>
-    <param-value>C:/data/wedding-app</param-value>
-</context-param>
-```
-
 ## Modules (CRUD)
 
-- **Users** — register, profile view/update/delete; admin user list & delete (`/admin/users`). Storage: `users.txt`.
-- **Vendors** — full CRUD (admin only for mutations); search + category filter. Storage: `vendors.txt`.
-- **Bookings** — create, list, update, cancel (frees date); optional admin hard delete. **Double booking** blocked for the same vendor on the same date while status is not `CANCELLED`. Storage: `bookings.txt`.
-- **Payments** — create, list, update, delete (delete admin-only); packages **Basic / Standard / Premium**. Storage: `payments.txt`.
+- **Users** — register, profile view/update/delete; admin user list & delete (`/admin/users`). Storage: `users` table.
+- **Vendors** — full CRUD (admin only for mutations); search + category filter. Type-specific fields in `extra1` / `extra2`. Storage: `vendors` table.
+- **Bookings** — create, list, update, cancel (frees date); optional admin hard delete. **Double booking** blocked for the same vendor on the same date while status is not `CANCELLED`. Storage: `bookings` table.
+- **Payments** — create, list, update, delete (delete admin-only); packages **Basic / Standard / Premium**. Storage: `payments` table.
 
 ## UI pages
 
@@ -54,9 +53,11 @@ Optional absolute path (e.g. shared or writable location):
 | `admin`  | `admin123` | ADMIN    |
 | `couple1`| `wedding2026` | CUSTOMER |
 
+(Loaded by `schema.sql` seed data.)
+
 ## Build & run
 
-Requirements: **JDK 17** (set `JAVA_HOME`). Maven is optional if you use the included **Maven Wrapper**.
+Requirements: **JDK 17** (set `JAVA_HOME`), **MySQL** with schema applied, **`database.properties`** configured. Maven is optional if you use the included **Maven Wrapper**.
 
 ```powershell
 # Windows (downloads Maven 3.9.9 on first run if needed)
@@ -86,7 +87,17 @@ Run with **Jetty** (embedded):
 mvn jetty:run
 ```
 
-Open `http://localhost:8080/`.
+Open `http://localhost:8081/` (Jetty port is set in `pom.xml` as `jetty.http.port`).
+
+### IntelliJ IDEA
+
+1. **Open** the project folder (the one that contains `pom.xml`). Wait for Maven import to finish.
+2. **File → Project Structure → Project** — set **SDK** to **17**.
+3. Run the app in either way:
+   - **Run** dropdown → choose **Jetty (localhost:8081)** (shared config from `.run/`), then click the green **Run** button; or
+   - Open the **Maven** tool window → **Plugins → jetty → jetty:run** (double-click or right-click **Run**).
+
+Keep the run window open. When the log shows **Started Jetty Server**, open **http://localhost:8081/**.
 
 Alternatively deploy `target/wedding-planning.war` to **Apache Tomcat 9** (or another **javax.servlet** container).
 
@@ -94,7 +105,7 @@ Alternatively deploy `target/wedding-planning.war` to **Apache Tomcat 9** (or an
 
 ```
 src/main/java/com/wedding/
-  config/          DataDirectoryInitializer, AppPaths
+  config/          DatabaseListener, AppPaths
   controller/      Servlets
   filter/          Encoding + auth + admin gate
   model/
@@ -103,12 +114,14 @@ src/main/java/com/wedding/
 src/main/webapp/
   WEB-INF/web.xml
   WEB-INF/jsp/     Protected views + includes
-  css/
+  css/app.css (small complements to Tailwind)
+  images/home/*.png (hero & story photography for the landing page)
   index.jsp, login.jsp, register.jsp
-src/main/resources/data-seed/
-data/              Sample text files (mirror)
+src/main/resources/
+  sql/schema.sql
+  database.properties.example
 ```
 
 ## Security notes
 
-Passwords are **SHA-256** hashed with an application pepper (see `PasswordUtil`). For real production use, replace with a dedicated password hashing scheme (bcrypt, Argon2) and add CSRF protection, HTTPS, and server-side session hardening.
+Passwords are **SHA-256** hashed with an application pepper (see `PasswordUtil`). For real production use, replace with a dedicated password hashing scheme (bcrypt, Argon2) and add CSRF protection, HTTPS, and server-side session hardening. **Do not commit** `database.properties`; use strong DB credentials and restrict MySQL `root` to localhost.

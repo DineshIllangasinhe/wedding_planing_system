@@ -31,7 +31,7 @@ public class LoginServlet extends BaseServlet {
             return;
         }
         try {
-            UserService users = new UserService(dataDir(getServletContext()));
+            UserService users = new UserService(dataSource(getServletContext()));
             var auth = users.authenticate(username, password);
             if (auth.isEmpty()) {
                 resp.sendRedirect(req.getContextPath() + "/login?error=credentials");
@@ -41,8 +41,16 @@ public class LoginServlet extends BaseServlet {
             session.setAttribute(SESSION_USER, auth.get());
             String target = safeNext(req.getContextPath(), next);
             resp.sendRedirect(target);
-        } catch (IOException e) {
-            throw new ServletException(e);
+        } catch (Exception e) {
+            getServletContext().log("Login failed", e);
+            Throwable t = e;
+            while (t.getCause() != null && t.getCause() != t) {
+                t = t.getCause();
+            }
+            getServletContext().log("Root cause: " + t.getClass().getName() + ": " + t.getMessage());
+            if (!resp.isCommitted()) {
+                resp.sendRedirect(req.getContextPath() + "/login?error=server");
+            }
         }
     }
 

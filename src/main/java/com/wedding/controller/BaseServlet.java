@@ -4,6 +4,7 @@ import com.wedding.config.AppPaths;
 import com.wedding.model.User;
 
 import javax.servlet.http.HttpServlet;
+import javax.sql.DataSource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -16,8 +17,8 @@ public abstract class BaseServlet extends HttpServlet {
 
     protected static final String SESSION_USER = "currentUser";
 
-    protected String dataDir(javax.servlet.ServletContext ctx) {
-        return AppPaths.dataDir(ctx);
+    protected DataSource dataSource(javax.servlet.ServletContext ctx) {
+        return AppPaths.dataSource(ctx);
     }
 
     protected User currentUser(HttpServletRequest req) {

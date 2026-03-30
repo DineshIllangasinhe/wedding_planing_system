@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * Links a user to a vendor on a specific event date. Persisted to bookings.txt.
+ * Links a user to a vendor on a specific event date. Persisted in the {@code bookings} table.
  */
 public class Booking {
 

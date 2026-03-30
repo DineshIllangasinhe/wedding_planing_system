@@ -1,79 +1,18 @@
-:root {
-  --wp-ink: #1a1523;
-  --wp-muted: #5c5566;
-  --wp-accent: #8b5a6b;
-  --wp-accent-dark: #6d4352;
-  --wp-cream: #faf7f5;
-  --wp-card: #ffffff;
-  --wp-border: rgba(26, 21, 35, 0.08);
-  --wp-shadow: 0 12px 40px rgba(26, 21, 35, 0.08);
+/* Tailwind complements — Wedding Suite */
+::selection {
+  background-color: rgba(225, 29, 72, 0.18);
+  color: #1c1917;
 }
 
-body {
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: var(--wp-ink);
-  background: linear-gradient(165deg, #fdfcfa 0%, #f3ece8 45%, #ebe4df 100%);
-  min-height: 100vh;
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(225, 29, 72, 0.45);
+  outline-offset: 2px;
 }
 
-.navbar-brand {
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.hero-gradient {
-  background: linear-gradient(120deg, var(--wp-accent) 0%, #b87a8f 50%, #c9a27a 100%);
-  color: #fff;
-  border-radius: 1.25rem;
-  box-shadow: var(--wp-shadow);
-}
-
-.card {
-  border: 1px solid var(--wp-border);
-  box-shadow: var(--wp-shadow);
-  border-radius: 1rem;
-}
-
-.card-title {
-  font-weight: 600;
-}
-
-.badge-vendor {
-  background: rgba(139, 90, 107, 0.12);
-  color: var(--wp-accent-dark);
-  font-weight: 500;
-}
-
-.table thead th {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--wp-muted);
-  border-bottom-width: 1px;
-}
-
-footer.wp-footer {
-  margin-top: 4rem;
-  padding: 2rem 0;
-  color: var(--wp-muted);
-  font-size: 0.9rem;
-}
-
-.form-label {
-  font-weight: 500;
-  color: var(--wp-ink);
-}
-
-.btn-primary {
-  background-color: var(--wp-accent);
-  border-color: var(--wp-accent);
-}
-
-.btn-primary:hover {
-  background-color: var(--wp-accent-dark);
-  border-color: var(--wp-accent-dark);
-}
-
-.text-muted.wp-sub {
-  color: var(--wp-muted) !important;
+@media (max-width: 640px) {
+  .table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
 }

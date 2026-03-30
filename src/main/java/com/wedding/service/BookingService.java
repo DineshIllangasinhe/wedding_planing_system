@@ -2,36 +2,45 @@ package com.wedding.service;
 
 import com.wedding.model.Booking;
 import com.wedding.model.BookingStatus;
-import com.wedding.util.FileUtil;
 
+import javax.sql.DataSource;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Booking CRUD with double-booking prevention for active statuses.
+ * Booking CRUD with double-booking prevention for active statuses (MySQL).
  */
 public class BookingService {
 
-    private static final String FILE = "bookings.txt";
+    private final DataSource dataSource;
 
-    private final String dataDir;
-
-    public BookingService(String dataDir) {
-        this.dataDir = dataDir;
+    public BookingService(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public List<Booking> listAll() throws IOException {
-        List<Booking> out = new ArrayList<>();
-        for (String line : FileUtil.readAllLines(dataDir, FILE)) {
-            out.add(fromLine(line));
+        String sql = "SELECT id, user_id, vendor_id, event_date, status, notes, created_at FROM bookings ORDER BY event_date DESC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            List<Booking> out = new ArrayList<>();
+            while (rs.next()) {
+                out.add(mapRow(rs));
+            }
+            return out;
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        out.sort(Comparator.comparing(Booking::getEventDate).reversed());
-        return out;
     }
 
     public List<Booking> listByUser(long userId) throws IOException {
@@ -40,9 +49,6 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Confirmed/pending/completed history for dashboard (excludes cancelled unless includeCancelled).
-     */
     public List<Booking> bookingHistoryForUser(long userId, boolean includeCancelled) throws IOException {
         return listByUser(userId).stream()
                 .filter(b -> includeCancelled || b.getStatus() != BookingStatus.CANCELLED)
@@ -50,12 +56,19 @@ public class BookingService {
     }
 
     public Optional<Booking> findById(long id) throws IOException {
-        for (Booking b : listAll()) {
-            if (b.getId() == id) {
-                return Optional.of(b);
+        String sql = "SELECT id, user_id, vendor_id, event_date, status, notes, created_at FROM bookings WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        return Optional.empty();
     }
 
     public Optional<String> create(long userId, long vendorId, LocalDate eventDate, String notes) throws IOException {
@@ -66,13 +79,20 @@ public class BookingService {
         if (hasVendorDateConflict(vendorId, eventDate, -1)) {
             return Optional.of("This vendor is already booked on the selected date. Please choose another date or vendor.");
         }
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        long id = FileUtil.nextId(lines, 0);
-        Booking b = new Booking(id, userId, vendorId, eventDate, BookingStatus.PENDING,
-                notes != null ? notes.trim() : "", LocalDate.now());
-        lines.add(toLine(b));
-        FileUtil.writeAllLines(dataDir, FILE, lines);
-        return Optional.empty();
+        String sql = "INSERT INTO bookings (user_id, vendor_id, event_date, status, notes, created_at) VALUES (?,?,?,?,?,?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setLong(1, userId);
+            ps.setLong(2, vendorId);
+            ps.setDate(3, Date.valueOf(eventDate));
+            ps.setString(4, BookingStatus.PENDING.name());
+            ps.setString(5, notes != null ? notes.trim() : "");
+            ps.setDate(6, Date.valueOf(LocalDate.now()));
+            ps.executeUpdate();
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
     }
 
     public Optional<String> update(long bookingId, long vendorId, LocalDate eventDate,
@@ -84,86 +104,71 @@ public class BookingService {
         if (status != BookingStatus.CANCELLED && hasVendorDateConflict(vendorId, eventDate, bookingId)) {
             return Optional.of("This vendor is already booked on the selected date.");
         }
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        List<String> next = new ArrayList<>();
-        boolean found = false;
-        for (String line : lines) {
-            Booking b = fromLine(line);
-            if (b.getId() == bookingId) {
-                found = true;
-                b.setVendorId(vendorId);
-                b.setEventDate(eventDate);
-                b.setStatus(status);
-                b.setNotes(notes != null ? notes.trim() : "");
-                next.add(toLine(b));
-            } else {
-                next.add(line);
+        String sql = "UPDATE bookings SET vendor_id=?, event_date=?, status=?, notes=? WHERE id=?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, vendorId);
+            ps.setDate(2, Date.valueOf(eventDate));
+            ps.setString(3, status.name());
+            ps.setString(4, notes != null ? notes.trim() : "");
+            ps.setLong(5, bookingId);
+            if (ps.executeUpdate() == 0) {
+                return Optional.of("Booking not found.");
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        if (!found) {
-            return Optional.of("Booking not found.");
-        }
-        FileUtil.writeAllLines(dataDir, FILE, next);
-        return Optional.empty();
     }
 
-    /**
-     * Cancel booking (soft state) — frees the vendor date for re-booking.
-     */
     public Optional<String> cancel(long bookingId) throws IOException {
         return updateStatus(bookingId, BookingStatus.CANCELLED);
     }
 
     public Optional<String> deleteHard(long bookingId) throws IOException {
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        List<String> next = new ArrayList<>();
-        boolean removed = false;
-        for (String line : lines) {
-            Booking b = fromLine(line);
-            if (b.getId() == bookingId) {
-                removed = true;
-            } else {
-                next.add(line);
+        String sql = "DELETE FROM bookings WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, bookingId);
+            if (ps.executeUpdate() == 0) {
+                return Optional.of("Booking not found.");
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        if (!removed) {
-            return Optional.of("Booking not found.");
-        }
-        FileUtil.writeAllLines(dataDir, FILE, next);
-        return Optional.empty();
     }
 
     private Optional<String> updateStatus(long bookingId, BookingStatus status) throws IOException {
-        List<String> lines = FileUtil.readAllLines(dataDir, FILE);
-        List<String> next = new ArrayList<>();
-        boolean found = false;
-        for (String line : lines) {
-            Booking b = fromLine(line);
-            if (b.getId() == bookingId) {
-                found = true;
-                b.setStatus(status);
-                next.add(toLine(b));
-            } else {
-                next.add(line);
+        String sql = "UPDATE bookings SET status = ? WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setLong(2, bookingId);
+            if (ps.executeUpdate() == 0) {
+                return Optional.of("Booking not found.");
             }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        if (!found) {
-            return Optional.of("Booking not found.");
-        }
-        FileUtil.writeAllLines(dataDir, FILE, next);
-        return Optional.empty();
     }
 
     public boolean hasVendorDateConflict(long vendorId, LocalDate date, long excludeBookingId) throws IOException {
-        for (Booking b : listAll()) {
-            if (b.getId() == excludeBookingId) {
-                continue;
+        String sql = "SELECT COUNT(*) FROM bookings WHERE vendor_id = ? AND event_date = ? AND status <> 'CANCELLED' AND (? < 0 OR id <> ?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, vendorId);
+            ps.setDate(2, Date.valueOf(date));
+            ps.setLong(3, excludeBookingId);
+            ps.setLong(4, excludeBookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1) > 0;
             }
-            if (b.getVendorId() == vendorId && b.getEventDate().equals(date) && b.blocksVendorOnDate()) {
-                return true;
-            }
+        } catch (SQLException e) {
+            throw new IOException(e);
         }
-        return false;
     }
 
     private Optional<String> validate(LocalDate eventDate, String notes) {
@@ -179,28 +184,15 @@ public class BookingService {
         return Optional.empty();
     }
 
-    private static Booking fromLine(String line) {
-        String[] c = FileUtil.splitRecord(line);
+    private static Booking mapRow(ResultSet rs) throws SQLException {
         return new Booking(
-                Long.parseLong(c[0]),
-                Long.parseLong(c[1]),
-                Long.parseLong(c[2]),
-                LocalDate.parse(c[3]),
-                BookingStatus.valueOf(c[4]),
-                c[5],
-                LocalDate.parse(c[6])
-        );
-    }
-
-    private static String toLine(Booking b) {
-        return FileUtil.joinRecord(
-                String.valueOf(b.getId()),
-                String.valueOf(b.getUserId()),
-                String.valueOf(b.getVendorId()),
-                b.getEventDate().toString(),
-                b.getStatus().name(),
-                b.getNotes(),
-                b.getCreatedAt().toString()
+                rs.getLong("id"),
+                rs.getLong("user_id"),
+                rs.getLong("vendor_id"),
+                rs.getDate("event_date").toLocalDate(),
+                BookingStatus.valueOf(rs.getString("status")),
+                rs.getString("notes"),
+                rs.getDate("created_at").toLocalDate()
         );
     }
 }

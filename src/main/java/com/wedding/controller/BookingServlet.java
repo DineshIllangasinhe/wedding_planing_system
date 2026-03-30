@@ -27,8 +27,8 @@ public class BookingServlet extends BaseServlet {
         }
         User u = currentUser(req);
         try {
-            BookingService bookings = new BookingService(dataDir(getServletContext()));
-            VendorService vendors = new VendorService(dataDir(getServletContext()));
+            BookingService bookings = new BookingService(dataSource(getServletContext()));
+            VendorService vendors = new VendorService(dataSource(getServletContext()));
             List<Booking> list = u.isAdmin() ? bookings.listAll() : bookings.listByUser(u.getId());
             Map<Long, Vendor> vendorMap = new HashMap<>();
             for (Vendor v : vendors.listAll()) {
@@ -63,7 +63,7 @@ public class BookingServlet extends BaseServlet {
         User u = currentUser(req);
         String action = req.getParameter("action");
         try {
-            BookingService bookings = new BookingService(dataDir(getServletContext()));
+            BookingService bookings = new BookingService(dataSource(getServletContext()));
             if ("cancel".equals(action)) {
                 long id = Long.parseLong(req.getParameter("bookingId"));
                 Booking b = bookings.findById(id).orElse(null);
