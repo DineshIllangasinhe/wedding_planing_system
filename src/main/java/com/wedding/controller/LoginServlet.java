@@ -38,6 +38,7 @@ public class LoginServlet extends BaseServlet {
                 return;
             }
             HttpSession session = req.getSession(true);
+            // Session-based authentication: store authenticated principal in session.
             session.setAttribute(SESSION_USER, auth.get());
             String target = safeNext(req.getContextPath(), next);
             resp.sendRedirect(target);
@@ -55,6 +56,7 @@ public class LoginServlet extends BaseServlet {
     }
 
     private static String safeNext(String contextPath, String next) {
+        // Open-redirect protection: only allow local relative paths.
         if (next == null || next.isBlank()) {
             return contextPath + "/dashboard";
         }

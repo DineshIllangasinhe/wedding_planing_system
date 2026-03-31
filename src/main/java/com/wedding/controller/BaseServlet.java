@@ -9,9 +9,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.util.Locale;
 
 /**
- * Shared helpers for authentication-aware servlets.
+ * Base controller class used by all feature servlets.
+ *
+ * <p>Viva note:
+ * this is inheritance in OOP. Common behavior (session access, auth checks,
+ * parameter validation) is centralized here so child servlets stay focused on
+ * business use-cases (Booking, Payment, Vendor, etc.).</p>
  */
 public abstract class BaseServlet extends HttpServlet {
 
@@ -52,5 +59,32 @@ public abstract class BaseServlet extends HttpServlet {
             return false;
         }
         return true;
+    }
+
+    protected String requiredParam(HttpServletRequest req, String name) {
+        // Shared request validation: fail fast before service/database calls.
+        String value = req.getParameter(name);
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Missing required parameter: " + name);
+        }
+        return value.trim();
+    }
+
+    protected long requiredPositiveLongParam(HttpServletRequest req, String name) {
+        // Input contract used by CRUD IDs (create/update/delete/select).
+        long value = Long.parseLong(requiredParam(req, name));
+        if (value <= 0) {
+            throw new IllegalArgumentException("Invalid parameter: " + name);
+        }
+        return value;
+    }
+
+    protected LocalDate requiredDateParam(HttpServletRequest req, String name) {
+        // ISO date parsing for form fields like eventDate.
+        return LocalDate.parse(requiredParam(req, name));
+    }
+
+    protected <E extends Enum<E>> E requiredEnumParam(HttpServletRequest req, String name, Class<E> enumType) {
+        return Enum.valueOf(enumType, requiredParam(req, name).toUpperCase(Locale.ROOT));
     }
 }

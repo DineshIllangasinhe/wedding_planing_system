@@ -34,6 +34,7 @@ public class DashboardServlet extends BaseServlet {
             BookingService bookings = new BookingService(dataSource(getServletContext()));
             PaymentService payments = new PaymentService(dataSource(getServletContext()));
             VendorService vendors = new VendorService(dataSource(getServletContext()));
+            // Read aggregation: dashboard composes data from multiple services.
             List<Booking> history = bookings.bookingHistoryForUser(u.getId(), true);
             List<Payment> payList = u.isAdmin()
                     ? payments.listAll()
@@ -46,6 +47,7 @@ public class DashboardServlet extends BaseServlet {
                     .filter(p -> p.getStatus() == PaymentStatus.PAID)
                     .map(Payment::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            // Derived metric: computed in memory for dashboard summary cards.
             req.setAttribute("bookingHistory", history);
             req.setAttribute("payments", payList);
             req.setAttribute("vendorMap", vendorMap);
