@@ -47,6 +47,8 @@
         };
     </script>
     <link href="${ctx}/css/app.css" rel="stylesheet"/>
+    <link href="${ctx}/css/home-hero.css" rel="stylesheet"/>
+    <link href="${ctx}/css/home-premium.css" rel="stylesheet"/>
 </head>
 <body class="min-h-full bg-gradient-to-b from-stone-50 via-rose-50/30 to-stone-100 text-stone-900 font-sans">
 <div class="sticky top-0 z-50">

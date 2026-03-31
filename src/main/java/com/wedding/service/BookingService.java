@@ -18,7 +18,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Booking CRUD with double-booking prevention for active statuses (MySQL).
+ * Booking service layer.
+ *
+ * <p>Viva note:
+ * this class demonstrates encapsulation + separation of concerns:
+ * servlet handles HTTP, this service handles business rules + SQL CRUD.</p>
  */
 public class BookingService {
 
@@ -72,11 +76,13 @@ public class BookingService {
     }
 
     public Optional<String> create(long userId, long vendorId, LocalDate eventDate, String notes) throws IOException {
+        // Business validation before INSERT.
         Optional<String> v = validate(eventDate, notes);
         if (v.isPresent()) {
             return v;
         }
         if (hasVendorDateConflict(vendorId, eventDate, -1)) {
+            // Domain rule: one vendor cannot have two active bookings on same date.
             return Optional.of("This vendor is already booked on the selected date. Please choose another date or vendor.");
         }
         String sql = "INSERT INTO bookings (user_id, vendor_id, event_date, status, notes, created_at) VALUES (?,?,?,?,?,?)";
@@ -97,6 +103,7 @@ public class BookingService {
 
     public Optional<String> update(long bookingId, long vendorId, LocalDate eventDate,
                                    BookingStatus status, String notes) throws IOException {
+        // Reuse same validation for UPDATE to keep rules consistent with CREATE.
         Optional<String> v = validate(eventDate, notes);
         if (v.isPresent()) {
             return v;
@@ -172,6 +179,7 @@ public class BookingService {
     }
 
     private Optional<String> validate(LocalDate eventDate, String notes) {
+        // Centralized validation keeps controller code thin and reusable.
         if (eventDate == null) {
             return Optional.of("Event date is required.");
         }

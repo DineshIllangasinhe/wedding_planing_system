@@ -40,7 +40,7 @@ public class BookingServlet extends BaseServlet {
             req.setAttribute("statuses", BookingStatus.values());
             String edit = req.getParameter("edit");
             if (edit != null && !edit.isBlank()) {
-                long id = Long.parseLong(edit);
+                long id = Long.parseLong(edit.trim());
                 bookings.findById(id).ifPresent(b -> {
                     if (u.isAdmin() || b.getUserId() == u.getId()) {
                         req.setAttribute("editBooking", b);
@@ -65,7 +65,8 @@ public class BookingServlet extends BaseServlet {
         try {
             BookingService bookings = new BookingService(dataSource(getServletContext()));
             if ("cancel".equals(action)) {
-                long id = Long.parseLong(req.getParameter("bookingId"));
+                // CRUD -> Update operation (soft delete style): mark as CANCELLED.
+                long id = requiredPositiveLongParam(req, "bookingId");
                 Booking b = bookings.findById(id).orElse(null);
                 if (b == null || (!u.isAdmin() && b.getUserId() != u.getId())) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -76,29 +77,32 @@ public class BookingServlet extends BaseServlet {
                 return;
             }
             if ("delete".equals(action) && u.isAdmin()) {
-                long id = Long.parseLong(req.getParameter("bookingId"));
+                // CRUD -> Delete operation (hard delete): admin only.
+                long id = requiredPositiveLongParam(req, "bookingId");
                 var err = bookings.deleteHard(id);
                 redirectWithFlash(req, resp, err, "Booking deleted.");
                 return;
             }
             if ("update".equals(action)) {
-                long id = Long.parseLong(req.getParameter("bookingId"));
+                // CRUD -> Update with validation + authorization checks.
+                long id = requiredPositiveLongParam(req, "bookingId");
                 Booking existing = bookings.findById(id).orElse(null);
                 if (existing == null || (!u.isAdmin() && existing.getUserId() != u.getId())) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                     return;
                 }
-                long vendorId = Long.parseLong(req.getParameter("vendorId"));
-                LocalDate date = LocalDate.parse(req.getParameter("eventDate"));
-                BookingStatus status = BookingStatus.valueOf(req.getParameter("status").trim().toUpperCase());
+                long vendorId = requiredPositiveLongParam(req, "vendorId");
+                LocalDate date = requiredDateParam(req, "eventDate");
+                BookingStatus status = requiredEnumParam(req, "status", BookingStatus.class);
                 String notes = req.getParameter("notes");
                 var err = bookings.update(id, vendorId, date, status, notes);
                 redirectWithFlash(req, resp, err, "Booking updated.");
                 return;
             }
             if ("create".equals(action)) {
-                long vendorId = Long.parseLong(req.getParameter("vendorId"));
-                LocalDate date = LocalDate.parse(req.getParameter("eventDate"));
+                // CRUD -> Create: validation happens at controller and service layers.
+                long vendorId = requiredPositiveLongParam(req, "vendorId");
+                LocalDate date = requiredDateParam(req, "eventDate");
                 String notes = req.getParameter("notes");
                 var err = bookings.create(u.getId(), vendorId, date, notes);
                 redirectWithFlash(req, resp, err, "Booking request submitted.");
@@ -107,7 +111,7 @@ public class BookingServlet extends BaseServlet {
             resp.sendRedirect(req.getContextPath() + "/bookings");
         } catch (IOException e) {
             throw new ServletException(e);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             resp.sendRedirect(req.getContextPath() + "/bookings?error=invalid");
         }
     }

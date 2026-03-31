@@ -21,7 +21,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * User management CRUD backed by MySQL.
+ * User service (CRUD + authentication).
+ *
+ * <p>Viva note:
+ * this layer encapsulates user-related business rules (validation, password hashing,
+ * role assignment) and keeps servlet controllers thin.</p>
  */
 public class UserService {
 
@@ -84,6 +88,7 @@ public class UserService {
 
     public Optional<String> register(String username, String plainPassword, String email,
                                      String fullName, String phone) throws IOException {
+        // Shared validation before CREATE.
         Optional<String> v = validateUserFields(username, email, fullName, phone, plainPassword, true);
         if (v.isPresent()) {
             return v;
@@ -96,11 +101,13 @@ public class UserService {
              PreparedStatement countPs = conn.prepareStatement("SELECT COUNT(*) FROM users");
              ResultSet crs = countPs.executeQuery()) {
             crs.next();
+            // First user bootstrap rule: first account becomes ADMIN.
             role = crs.getLong(1) == 0 ? UserRole.ADMIN : UserRole.CUSTOMER;
         } catch (SQLException e) {
             throw new IOException(e);
         }
         String hash = PasswordUtil.hash(username.trim(), plainPassword);
+        // Security: persist hash only (never plain-text password).
         String sql = "INSERT INTO users (username, password_hash, email, full_name, phone, `role`, created_at) VALUES (?,?,?,?,?,?,?)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -122,6 +129,7 @@ public class UserService {
 
     public Optional<String> update(long id, String email, String fullName, String phone,
                                    String newPasswordOrBlank) throws IOException {
+        // Reuse validation for UPDATE to keep consistency with CREATE rules.
         Optional<String> v = validateUserFields("x", email, fullName, phone, newPasswordOrBlank, false);
         if (v.isPresent()) {
             return v;
@@ -132,6 +140,7 @@ public class UserService {
         }
         User u = existing.get();
         boolean changePw = newPasswordOrBlank != null && !newPasswordOrBlank.isBlank();
+        // Dynamic SQL: include password update only when user entered a new one.
         String sql = changePw
                 ? "UPDATE users SET email=?, full_name=?, phone=?, password_hash=? WHERE id=?"
                 : "UPDATE users SET email=?, full_name=?, phone=? WHERE id=?";
@@ -170,6 +179,7 @@ public class UserService {
     }
 
     public Optional<User> authenticate(String username, String plainPassword) throws IOException {
+        // Auth flow: fetch by username then verify salted hash.
         Optional<User> u = findByUsername(username);
         if (u.isEmpty()) {
             return Optional.empty();

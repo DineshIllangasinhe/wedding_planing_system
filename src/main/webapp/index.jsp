@@ -9,29 +9,34 @@
     </div>
 </c:if>
 
-<%-- Full-bleed hero: couple on left, copy on right (matches photo composition) --%>
 <section class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden">
-    <div class="relative min-h-[min(88vh,52rem)] w-full bg-stone-900">
-        <div class="absolute inset-0 bg-cover bg-center sm:bg-[center_30%]" style="background-image: url('${ctx}/images/home/hero-lake.png');"></div>
-        <div class="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-900/75 to-stone-900/25 sm:from-stone-950/90 sm:via-stone-900/55 sm:to-transparent"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-stone-950/50 to-transparent sm:hidden"></div>
-        <div class="relative z-10 mx-auto flex min-h-[min(88vh,52rem)] max-w-7xl flex-col justify-end px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:flex-row lg:items-center lg:justify-end lg:px-8 lg:pb-24 lg:pt-36">
-            <div class="max-w-xl text-left lg:ml-auto lg:text-right">
-                <p class="text-xs font-semibold uppercase tracking-[0.35em] text-amber-200/90">Wedding Suite</p>
-                <h1 class="mt-4 font-hero text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                    Plan the day you&rsquo;ll remember forever.
+    <div class="relative min-h-[min(90vh,56rem)] w-full bg-stone-950">
+        <div class="absolute inset-0 hero-slider">
+            <img src="${ctx}/images/home/lake-couple-2.png" alt="Bride and groom by lakeside" class="hero-slide"/>
+            <img src="${ctx}/images/home/hero-lake.png" alt="Golden hour wedding portrait" class="hero-slide"/>
+            <img src="${ctx}/images/home/arch-floral-2.png" alt="Couple under floral arch" class="hero-slide"/>
+            <img src="${ctx}/images/home/hero-arch.png" alt="Outdoor wedding ceremony" class="hero-slide"/>
+        </div>
+        <div class="absolute inset-0 bg-gradient-to-r from-stone-950/90 via-stone-950/65 to-stone-900/20"></div>
+        <div class="hero-glow hero-glow-left"></div>
+        <div class="hero-glow hero-glow-right"></div>
+        <div class="relative z-10 mx-auto flex min-h-[min(90vh,56rem)] max-w-7xl flex-col justify-end px-4 pb-20 pt-28 sm:px-6 lg:px-8">
+            <div class="max-w-2xl motion-fade-up">
+                <p class="text-xs font-semibold uppercase tracking-[0.35em] text-rose-200">Wedding Planning Platform</p>
+                <h1 class="mt-4 font-hero text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+                    Real weddings deserve a real system.
                 </h1>
-                <p class="mt-6 text-base leading-relaxed text-stone-200/95 sm:text-lg">
-                    Curated vendors, protected dates, and payments in one place—built like a real operations platform, not a demo form.
+                <p class="mt-6 max-w-xl text-base leading-relaxed text-stone-200 sm:text-lg">
+                    Plan your ceremony like modern teams do: coordinated vendors, secured dates, clear payments, and a polished experience from first click to final celebration.
                 </p>
-                <div class="mt-10 flex flex-wrap gap-3 lg:justify-end">
-                    <a href="${ctx}/vendors" class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-stone-900 shadow-lg shadow-black/20 transition hover:bg-amber-50">
+                <div class="mt-10 flex flex-wrap gap-3">
+                    <a href="${ctx}/vendors" class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-stone-900 shadow-lg shadow-black/30 transition hover:bg-rose-50">
                         Explore vendors
                     </a>
                     <c:choose>
                         <c:when test="${empty sessionScope.currentUser}">
                             <a href="${ctx}/register" class="inline-flex items-center justify-center rounded-full border border-white/35 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20">
-                                Get started free
+                                Start planning
                             </a>
                         </c:when>
                         <c:otherwise>
@@ -46,102 +51,140 @@
     </div>
 </section>
 
-<%-- Trust strip --%>
-<section class="relative z-20 -mt-6 mx-auto max-w-7xl px-4 sm:-mt-8 sm:px-6 lg:px-8">
-    <div class="grid gap-4 rounded-2xl border border-stone-200/90 bg-white/95 p-6 shadow-card backdrop-blur-sm sm:grid-cols-3 sm:p-8">
-        <div class="text-center sm:text-left">
-            <p class="font-display text-2xl font-semibold text-rose-800">Double-booking safe</p>
-            <p class="mt-1 text-sm text-stone-600">Same vendor &amp; date conflicts are blocked automatically.</p>
+<section class="relative z-20 -mt-7 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="grid gap-4 rounded-2xl border border-stone-200/90 bg-white/95 p-6 shadow-card motion-fade-up sm:grid-cols-3 sm:p-8">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-stone-500">Availability</p>
+            <p class="mt-2 font-display text-2xl font-semibold text-stone-900">Conflict-safe booking</p>
+            <p class="mt-1 text-sm text-stone-600">Auto blocks duplicate vendor/date reservations.</p>
         </div>
-        <div class="text-center sm:border-x sm:border-stone-200 sm:px-6">
-            <p class="font-display text-2xl font-semibold text-rose-800">Packages &amp; payments</p>
-            <p class="mt-1 text-sm text-stone-600">Basic, Standard &amp; Premium flows with status tracking.</p>
+        <div class="sm:border-x sm:border-stone-200 sm:px-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-stone-500">Operations</p>
+            <p class="mt-2 font-display text-2xl font-semibold text-stone-900">Package + payment flow</p>
+            <p class="mt-1 text-sm text-stone-600">Track status from request to final payment.</p>
         </div>
-        <div class="text-center sm:text-right">
-            <p class="font-display text-2xl font-semibold text-rose-800">Admin-ready</p>
-            <p class="mt-1 text-sm text-stone-600">User directory, vendor CRUD, and audit-friendly records.</p>
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-stone-500">Control</p>
+            <p class="mt-2 font-display text-2xl font-semibold text-stone-900">Admin-ready tools</p>
+            <p class="mt-1 text-sm text-stone-600">Manage vendors and users with search and filters.</p>
         </div>
     </div>
 </section>
 
-<%-- Visual story: two images --%>
+<section class="mt-8 sm:mt-10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="glass-strip rounded-2xl px-4 py-4 sm:px-6">
+            <div class="grid gap-3 text-center sm:grid-cols-3">
+                <div class="glass-chip">
+                    <p class="text-xs uppercase tracking-[0.22em] text-rose-700/80">Avg booking setup</p>
+                    <p class="mt-1 font-display text-2xl text-stone-900">~ 6 min</p>
+                </div>
+                <div class="glass-chip">
+                    <p class="text-xs uppercase tracking-[0.22em] text-rose-700/80">Tracked payment states</p>
+                    <p class="mt-1 font-display text-2xl text-stone-900">Pending / Paid</p>
+                </div>
+                <div class="glass-chip">
+                    <p class="text-xs uppercase tracking-[0.22em] text-rose-700/80">Role separation</p>
+                    <p class="mt-1 font-display text-2xl text-stone-900">Admin + Customer</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="mt-16 sm:mt-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-10 max-w-2xl">
-            <h2 class="font-hero text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">Every detail, considered</h2>
-            <p class="mt-3 text-stone-600">From the first vow to the last toast—coordinate vendors and timelines with clarity.</p>
+            <h2 class="font-hero text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">A complete wedding story, in one experience</h2>
+            <p class="mt-3 text-stone-600">Built with real visuals and real product behavior. Every stage of a wedding can be managed from one clean interface.</p>
         </div>
-        <div class="grid gap-6 lg:grid-cols-2 lg:gap-8">
-            <figure class="group overflow-hidden rounded-3xl shadow-card">
-                <img src="${ctx}/images/home/hero-rings.png" alt="Wedding ring exchange" class="h-72 w-full object-cover transition duration-700 group-hover:scale-[1.02] sm:h-96" loading="lazy" width="800" height="600"/>
-                <figcaption class="border-x border-b border-stone-200/90 bg-white px-5 py-4">
-                    <p class="font-display text-sm font-semibold text-stone-900">The moment</p>
-                    <p class="mt-1 text-sm text-stone-500">Ceremony details, captured with care—mirrored in how we store your bookings.</p>
-                </figcaption>
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up">
+                <img src="${ctx}/images/home/hero-lake.png" alt="Couple portrait in golden landscape" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Golden-hour portraits</figcaption>
             </figure>
-            <figure class="group overflow-hidden rounded-3xl shadow-card">
-                <img src="${ctx}/images/home/hero-arch.png" alt="Couple at floral wedding arch" class="h-72 w-full object-cover object-[center_25%] transition duration-700 group-hover:scale-[1.02] sm:h-96" loading="lazy" width="800" height="600"/>
-                <figcaption class="border-x border-b border-stone-200/90 bg-white px-5 py-4">
-                    <p class="font-display text-sm font-semibold text-stone-900">The setting</p>
-                    <p class="mt-1 text-sm text-stone-500">Décor, catering, photography—search and shortlist vendors that fit your vision.</p>
-                </figcaption>
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up motion-delay-1">
+                <img src="${ctx}/images/home/ring-closeup-2.png" alt="Close-up ring exchange" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Ring exchange details</figcaption>
+            </figure>
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up motion-delay-2">
+                <img src="${ctx}/images/home/hero-rings.png" alt="Marriage signing moment" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Legal and ceremony signing</figcaption>
+            </figure>
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up motion-delay-3">
+                <img src="${ctx}/images/home/hero-arch.png" alt="Garden ceremony with wedding party" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Classic ceremony setup</figcaption>
+            </figure>
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up">
+                <img src="${ctx}/images/home/arch-floral-2.png" alt="Couple under colorful floral arch" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Floral concept ceremony</figcaption>
+            </figure>
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up motion-delay-1">
+                <img src="${ctx}/images/home/lake-couple-2.png" alt="Bride and groom by the lake" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Editorial couple session</figcaption>
+            </figure>
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up motion-delay-2">
+                <img src="${ctx}/images/home/celebration-rice-bw-2.png" alt="Black and white wedding celebration" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Grand celebration exit</figcaption>
+            </figure>
+            <figure class="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-soft motion-fade-up motion-delay-3">
+                <img src="${ctx}/images/home/celebration-bw.png" alt="Traditional wedding ring ceremony" class="h-56 w-full object-cover transition duration-700 group-hover:scale-105"/>
+                <figcaption class="px-4 py-3 text-sm text-stone-600">Cultural ceremony moment</figcaption>
             </figure>
         </div>
     </div>
 </section>
 
-<%-- Full-bleed B&W celebration band --%>
-<section class="relative left-1/2 right-1/2 mt-16 -ml-[50vw] -mr-[50vw] w-screen sm:mt-24">
-    <div class="relative min-h-[22rem] overflow-hidden bg-stone-900">
-        <img src="${ctx}/images/home/celebration-bw.png" alt="Celebration after the ceremony" class="absolute inset-0 h-full w-full object-cover object-center opacity-90" loading="lazy"/>
-        <div class="absolute inset-0 bg-gradient-to-r from-stone-950/85 via-stone-900/55 to-stone-900/30"></div>
-        <div class="relative z-10 mx-auto flex min-h-[22rem] max-w-4xl flex-col justify-center px-6 py-16 text-center sm:px-8">
-            <blockquote class="font-hero text-2xl font-medium leading-snug text-white sm:text-3xl md:text-4xl">
-                &ldquo;Your story deserves more than spreadsheets and group chats.&rdquo;
-            </blockquote>
-            <p class="mt-6 text-sm font-medium uppercase tracking-[0.25em] text-amber-200/90">One suite for couples &amp; coordinators</p>
-        </div>
-    </div>
-</section>
-
-<%-- Services --%>
 <section class="mt-16 sm:mt-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 class="font-hero text-2xl font-semibold text-stone-900 sm:text-3xl">What you can book</h2>
-        <p class="mt-2 max-w-2xl text-stone-600">Categories designed around real vendor data—not generic placeholders.</p>
-        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <article class="group rounded-2xl border border-stone-200/90 bg-white p-6 shadow-soft transition hover:border-rose-200/80 hover:shadow-card">
-                <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-800">Photography</span>
-                <h3 class="mt-4 font-display text-lg font-semibold text-stone-900">Story-driven coverage</h3>
-                <p class="mt-2 text-sm leading-relaxed text-stone-600">Editorial, documentary, and classic styles with transparent day rates.</p>
+        <div class="mb-8 flex items-end justify-between gap-4">
+            <div>
+                <h2 class="font-hero text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">Signature experiences</h2>
+                <p class="mt-2 text-stone-600">Designed like a real event operation: visual, organized, and fast.</p>
+            </div>
+            <a href="${ctx}/dashboard" class="hidden rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 sm:inline-flex">View dashboard</a>
+        </div>
+        <div class="grid gap-5 md:grid-cols-3">
+            <article class="premium-card motion-fade-up">
+                <div class="premium-pill">01</div>
+                <h3 class="mt-5 font-display text-xl font-semibold text-stone-900">Visual vendor discovery</h3>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600">Search vendors by category and compare offerings before locking your date.</p>
             </article>
-            <article class="group rounded-2xl border border-stone-200/90 bg-white p-6 shadow-soft transition hover:border-rose-200/80 hover:shadow-card">
-                <span class="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Catering</span>
-                <h3 class="mt-4 font-display text-lg font-semibold text-stone-900">Menus that match your venue</h3>
-                <p class="mt-2 text-sm leading-relaxed text-stone-600">Cuisine focus, staffing options, and tasting-ready descriptions.</p>
+            <article class="premium-card motion-fade-up motion-delay-1">
+                <div class="premium-pill">02</div>
+                <h3 class="mt-5 font-display text-xl font-semibold text-stone-900">Protected booking workflow</h3>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600">Date conflicts are blocked automatically, so your timeline stays reliable.</p>
             </article>
-            <article class="group rounded-2xl border border-stone-200/90 bg-white p-6 shadow-soft transition hover:border-rose-200/80 hover:shadow-card sm:col-span-2 lg:col-span-1">
-                <span class="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-900">Décor</span>
-                <h3 class="mt-4 font-display text-lg font-semibold text-stone-900">Cohesive visual design</h3>
-                <p class="mt-2 text-sm leading-relaxed text-stone-600">Theme-led styling with optional floral design add-ons.</p>
+            <article class="premium-card motion-fade-up motion-delay-2">
+                <div class="premium-pill">03</div>
+                <h3 class="mt-5 font-display text-xl font-semibold text-stone-900">Clear financial tracking</h3>
+                <p class="mt-2 text-sm leading-relaxed text-stone-600">Manage package selections and payment status from one secure screen.</p>
             </article>
         </div>
     </div>
 </section>
 
-<%-- Bottom CTA --%>
-<section class="mt-16 pb-4 sm:mt-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="overflow-hidden rounded-3xl bg-gradient-to-br from-rose-900 via-rose-800 to-amber-900 px-8 py-12 text-center shadow-card sm:px-12 sm:py-16">
-            <h2 class="font-hero text-2xl font-semibold text-white sm:text-3xl">Ready to shape your timeline?</h2>
-            <p class="mx-auto mt-3 max-w-lg text-rose-100/90">Browse vendors, lock your date, and keep payments aligned—starting today.</p>
-            <div class="mt-8 flex flex-wrap justify-center gap-3">
-                <a href="${ctx}/vendors" class="inline-flex rounded-full bg-white px-8 py-3 text-sm font-semibold text-rose-900 shadow-lg hover:bg-amber-50">Browse directory</a>
-                <c:if test="${empty sessionScope.currentUser}">
-                    <a href="${ctx}/register" class="inline-flex rounded-full border border-white/40 bg-white/10 px-8 py-3 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20">Create account</a>
-                </c:if>
+<section class="mt-16 sm:mt-20">
+    <div class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <article class="rounded-3xl border border-stone-200/90 bg-white p-7 shadow-soft motion-fade-up">
+            <h3 class="font-display text-xl font-semibold text-stone-900">How couples use it in real life</h3>
+            <ul class="mt-5 space-y-4 text-sm text-stone-600">
+                <li class="timeline-item pl-5">Discover and compare verified vendors in one directory.</li>
+                <li class="timeline-item pl-5">Reserve your preferred date without double-booking risks.</li>
+                <li class="timeline-item pl-5">Track package and payment status in one clear place.</li>
+                <li class="timeline-item pl-5">Collaborate with planners and keep decisions organized.</li>
+            </ul>
+        </article>
+        <article class="overflow-hidden rounded-3xl bg-gradient-to-br from-rose-900 via-rose-800 to-amber-900 p-8 text-white shadow-card motion-fade-up motion-delay-1">
+            <h3 class="font-display text-2xl font-semibold">Wedding-ready UI, business-ready engine</h3>
+            <p class="mt-3 text-sm leading-relaxed text-rose-100/95">
+                This is not a template-only page. Behind this interface are role-based access, validation, booking rules, and payment records built for real operation flows.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="${ctx}/vendors" class="rounded-full bg-white px-6 py-3 text-sm font-semibold text-rose-900 hover:bg-amber-50">View vendors</a>
+                <a href="${ctx}/bookings" class="rounded-full border border-white/45 bg-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/20">Manage bookings</a>
             </div>
-        </div>
+        </article>
     </div>
 </section>
 

@@ -25,6 +25,7 @@ public class RegisterServlet extends BaseServlet {
         String phone = req.getParameter("phone");
         try {
             UserService users = new UserService(dataSource(getServletContext()));
+            // CRUD -> Create user account (service applies validation + password hashing).
             var err = users.register(username, password, email, fullName, phone);
             if (err.isPresent()) {
                 req.setAttribute("formError", err.get());

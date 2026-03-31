@@ -32,6 +32,7 @@ public class ProfileServlet extends BaseServlet {
         try {
             UserService users = new UserService(dataSource(getServletContext()));
             if ("delete".equals(action)) {
+                // Self-service delete (CRUD -> Delete) for currently logged-in user.
                 var err = users.delete(u.getId());
                 if (err.isPresent()) {
                     req.setAttribute("formError", err.get());
@@ -50,6 +51,7 @@ public class ProfileServlet extends BaseServlet {
             String fullName = req.getParameter("fullName");
             String phone = req.getParameter("phone");
             String newPassword = req.getParameter("newPassword");
+            // Self-service update (CRUD -> Update) with validation in UserService.
             var err = users.update(u.getId(), email, fullName, phone, newPassword);
             if (err.isPresent()) {
                 req.setAttribute("formError", err.get());

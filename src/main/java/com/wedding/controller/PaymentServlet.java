@@ -38,7 +38,7 @@ public class PaymentServlet extends BaseServlet {
             req.setAttribute("paymentStatuses", PaymentStatus.values());
             String edit = req.getParameter("edit");
             if (edit != null && !edit.isBlank()) {
-                long id = Long.parseLong(edit);
+                long id = Long.parseLong(edit.trim());
                 payments.findById(id).ifPresent(p -> {
                     if (u.isAdmin() || p.getUserId() == u.getId()) {
                         req.setAttribute("editPayment", p);
@@ -64,25 +64,27 @@ public class PaymentServlet extends BaseServlet {
             PaymentService payments = new PaymentService(dataSource(getServletContext()));
             BookingService bookings = new BookingService(dataSource(getServletContext()));
             if ("delete".equals(action)) {
+                // CRUD -> Delete: restricted to admin role.
                 if (!u.isAdmin()) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                     return;
                 }
-                long id = Long.parseLong(req.getParameter("paymentId"));
+                long id = requiredPositiveLongParam(req, "paymentId");
                 var err = payments.delete(id);
                 redirect(req, resp, err, "Payment record deleted.");
                 return;
             }
             if ("update".equals(action)) {
-                long id = Long.parseLong(req.getParameter("paymentId"));
+                // CRUD -> Update: customer can edit own record but cannot elevate payment status.
+                long id = requiredPositiveLongParam(req, "paymentId");
                 Payment existing = payments.findById(id).orElse(null);
                 if (existing == null || (!u.isAdmin() && existing.getUserId() != u.getId())) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                     return;
                 }
-                PackageType pkg = PackageType.valueOf(req.getParameter("packageType").trim().toUpperCase());
-                BigDecimal amount = new BigDecimal(req.getParameter("amount").trim());
-                PaymentStatus status = PaymentStatus.valueOf(req.getParameter("status").trim().toUpperCase());
+                PackageType pkg = requiredEnumParam(req, "packageType", PackageType.class);
+                BigDecimal amount = new BigDecimal(requiredParam(req, "amount"));
+                PaymentStatus status = requiredEnumParam(req, "status", PaymentStatus.class);
                 if (!u.isAdmin() && status != existing.getStatus()) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                     return;
@@ -92,15 +94,16 @@ public class PaymentServlet extends BaseServlet {
                 return;
             }
             if ("create".equals(action)) {
-                long bookingId = Long.parseLong(req.getParameter("bookingId"));
+                // CRUD -> Create: payment must point to a booking owned by the current user/admin scope.
+                long bookingId = requiredPositiveLongParam(req, "bookingId");
                 Booking b = bookings.findById(bookingId).orElse(null);
                 if (b == null || (!u.isAdmin() && b.getUserId() != u.getId())) {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                     return;
                 }
                 long payerId = u.isAdmin() ? b.getUserId() : u.getId();
-                PackageType pkg = PackageType.valueOf(req.getParameter("packageType").trim().toUpperCase());
-                BigDecimal amount = new BigDecimal(req.getParameter("amount").trim());
+                PackageType pkg = requiredEnumParam(req, "packageType", PackageType.class);
+                BigDecimal amount = new BigDecimal(requiredParam(req, "amount"));
                 var err = payments.create(bookingId, payerId, pkg, amount);
                 redirect(req, resp, err, "Payment record created.");
                 return;
@@ -108,7 +111,7 @@ public class PaymentServlet extends BaseServlet {
             resp.sendRedirect(req.getContextPath() + "/payments");
         } catch (IOException e) {
             throw new ServletException(e);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             resp.sendRedirect(req.getContextPath() + "/payments?error=invalid");
         }
     }

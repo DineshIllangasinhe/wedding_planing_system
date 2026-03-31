@@ -20,7 +20,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Payment / package CRUD backed by MySQL.
+ * Payment service layer with CRUD + validation.
+ *
+ * <p>Viva note:
+ * service class isolates payment business logic from controllers
+ * (single responsibility in OOP design).</p>
  */
 public class PaymentService {
 
@@ -66,6 +70,7 @@ public class PaymentService {
     }
 
     public Optional<String> create(long bookingId, long userId, PackageType packageType, BigDecimal amount) throws IOException {
+        // Validate incoming data before INSERT.
         Optional<String> v = validate(amount, packageType);
         if (v.isPresent()) {
             return v;
@@ -87,6 +92,7 @@ public class PaymentService {
     }
 
     public Optional<String> update(long paymentId, PackageType packageType, BigDecimal amount, PaymentStatus status) throws IOException {
+        // Update path follows the same validation contract as create path.
         Optional<String> v = validate(amount, packageType);
         if (v.isPresent()) {
             return v;
@@ -122,6 +128,7 @@ public class PaymentService {
     }
 
     private Optional<String> validate(BigDecimal amount, PackageType packageType) {
+        // Domain validation: package must be selected and amount must be positive.
         if (packageType == null) {
             return Optional.of("Package type is required.");
         }
